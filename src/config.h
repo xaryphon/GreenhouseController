@@ -1,0 +1,13 @@
+//
+// Created by Noa Storm on 25/09/2024.
+//
+
+#ifndef GREENHOUSE_CONTROLLER_CONFIG_H
+#define GREENHOUSE_CONTROLLER_CONFIG_H
+
+#define BTN0_PIN 9
+#define BTN1_PIN 8
+#define BTN2_PIN 7
+
+
+#endif //GREENHOUSE_CONTROLLER_CONFIG_H

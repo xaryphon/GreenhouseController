@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <pico/cyw43_arch.h>
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -7,6 +8,8 @@
 #include "PicoOsUart.h"
 #include "ssd1306.h"
 
+#include "config.h"
+#include "button.h"
 
 #include "hardware/timer.h"
 extern "C" {
@@ -30,6 +33,22 @@ struct led_params{
     uint pin;
     uint delay;
 };
+
+struct task_params {
+    QueueHandle_t queue;
+    uint pin;
+};
+
+void test_task(void *param) {
+    task_params *tpr = (task_params *) param;
+    uint32_t value;
+
+    while (true) {
+        if (xQueueReceive(tpr->queue, static_cast<void *>(&value), pdMS_TO_TICKS(5000)) == pdTRUE) {
+            printf("\n%lu\n", value);
+        }
+    }
+}
 
 void blink_task(void *param)
 {
@@ -115,22 +134,21 @@ void tls_task(void *param)
 int main()
 {
     static led_params lp1 = { .pin = 20, .delay = 300 };
+    auto btn_queue = xQueueCreate(5, sizeof(uint32_t));
     stdio_init_all();
     printf("\nBoot\n");
-
-    //gpio_sem = xSemaphoreCreateBinary();
+    static task_params tp1 = { .queue = btn_queue};
+    xTaskCreate(test_task, "test", 256, (void *) &tp1, tskIDLE_PRIORITY + 1, nullptr);
+    Button btn0("BTN0", BTN0_PIN, &btn_queue);
+    Button btn1("BTN1", BTN1_PIN, &btn_queue);
+    Button btn2("BTN2", BTN2_PIN, &btn_queue);
+    gpio_sem = xSemaphoreCreateBinary();
     //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
-    //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr,
-    //            tskIDLE_PRIORITY + 1, nullptr);
-#if 1
+    //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(modbus_task, "Modbus", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
-
-
-    xTaskCreate(display_task, "SSD1306", 512, (void *) nullptr,tskIDLE_PRIORITY + 1, nullptr);
-
+    //xTaskCreate(display_task, "SSD1306", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(i2c_task, "i2c test", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
-#endif
     //xTaskCreate(tls_task, "tls test", 6000, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
 
     vTaskStartScheduler();
@@ -185,7 +203,7 @@ void modbus_task(void *param) {
     ModbusRegister produal(rtu_client, 1, 0);
     produal.write(100);
     vTaskDelay((100));
-    produal.write(100);
+    produal.write(0);
 #endif
 
     while (true) {
