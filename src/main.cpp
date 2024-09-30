@@ -2,6 +2,7 @@
 #include <sstream>
 #include <pico/cyw43_arch.h>
 #include "FreeRTOS.h"
+#include "RotaryDecoder.h"
 #include "task.h"
 #include "semphr.h"
 #include "hardware/gpio.h"
@@ -131,17 +132,40 @@ void tls_task(void *param)
     }
 }
 
+static RotaryDecoder *g_rotary_decoder = nullptr;
+static void irq_callback(uint pin, uint32_t event_mask) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if (pin == ROT_A_PIN) {
+        g_rotary_decoder->OnInterrupt(&xHigherPriorityTaskWoken);
+    }
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void tmp_task(void *param) {
+    xQueueHandle input_queue = (xQueueHandle)param;
+    for (;;) {
+        uint pin;
+        xQueueReceive(input_queue, &pin, portMAX_DELAY);
+        printf("%u\n", pin);
+    }
+}
+
 int main()
 {
     static led_params lp1 = { .pin = 20, .delay = 300 };
-    auto btn_queue = xQueueCreate(5, sizeof(uint32_t));
+    QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
     stdio_init_all();
     printf("\nBoot\n");
-    static task_params tp1 = { .queue = btn_queue};
+    gpio_set_irq_callback(irq_callback);
+    static task_params tp1 = { .queue = input_queue};
     xTaskCreate(test_task, "test", 256, (void *) &tp1, tskIDLE_PRIORITY + 1, nullptr);
-    Button btn0("BTN0", BTN0_PIN, &btn_queue);
-    Button btn1("BTN1", BTN1_PIN, &btn_queue);
-    Button btn2("BTN2", BTN2_PIN, &btn_queue);
+    static RotaryDecoder rotary_decoder(input_queue, ROT_A_PIN, ROT_B_PIN, 4);
+    g_rotary_decoder = &rotary_decoder;
+    irq_set_enabled(IO_IRQ_BANK0, true);
+    static Button btn0("BTN0", BTN0_PIN, &input_queue);
+    static Button btn1("BTN1", BTN1_PIN, &input_queue);
+    static Button btn2("BTN2", BTN2_PIN, &input_queue);
+    static Button btnr("BTNR", ROT_SW_PIN, &input_queue);
     gpio_sem = xSemaphoreCreateBinary();
     //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);

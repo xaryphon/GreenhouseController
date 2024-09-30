@@ -5,6 +5,8 @@ add_executable(${ProjectName}
         Fmutex.h
         blinker.cpp
         blinker.h
+        RotaryDecoder.cpp
+        eeprom.cpp
 
 #        ipstack/IPStack.cpp
 #        ipstack/IPStack.h
