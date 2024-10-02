@@ -1,4 +1,5 @@
 #include "RotaryDecoder.h"
+#include "config.h"
 #include <cstdio>
 #include <hardware/gpio.h>
 
@@ -15,7 +16,7 @@ RotaryDecoder::RotaryDecoder(QueueHandle_t input_queue, uint pin_a, uint pin_b, 
     gpio_init(pin_a);
     gpio_init(pin_b);
     gpio_set_irq_enabled(pin_a, GPIO_IRQ_EDGE_FALL, true);
-    xTaskCreate(task_entry, "RotaryDecoder", 128, this, tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(task_entry, "RotaryDecoder", 128, this, TASK_ROTARY_PRIORITY, NULL);
 }
 
 void RotaryDecoder::OnInterrupt(BaseType_t *xHigherPriorityTaskWoken) {
