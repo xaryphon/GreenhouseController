@@ -2,6 +2,9 @@
 #include <sstream>
 #include <pico/cyw43_arch.h>
 #include "FreeRTOS.h"
+#include "PicoI2C.h"
+#include "RotaryDecoder.h"
+#include "eeprom.h"
 #include "task.h"
 #include "semphr.h"
 #include "hardware/gpio.h"
@@ -130,13 +133,27 @@ static void irq_callback(uint pin, uint32_t event_mask) {
 }
 
 
+void loader_task(void *param) {
+    Eeprom *eeprom = (Eeprom*)param;
+
+    eeprom->LoadBlocking();
+    eeprom->QueueTargetPPM(6);
+    eeprom->QueueNetworkCredentials("Hello", "World");
+    eeprom->LoadBlocking();
+
+    while (true) {
+        vTaskDelay(1000);
+    }
+}
+
 int main() {
+    static led_params lp1 = { .pin = 20, .delay = 300 };
+    QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
     stdio_init_all();
     printf("\nBoot\n");
 
     gpio_sem = xSemaphoreCreateBinary();
     gpio_set_irq_callback(irq_callback);
-    QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
     static RotaryDecoder rotary_decoder(input_queue, ROT_A_PIN, ROT_B_PIN, 4);
     g_rotary_decoder = &rotary_decoder;
     irq_set_enabled(IO_IRQ_BANK0, true);
@@ -145,10 +162,14 @@ int main() {
     static Button btn1("BTN1", BTN1_PIN, &input_queue);
     static Button btn2("BTN2", BTN2_PIN, &input_queue);
     static Button btnr("BTNR", ROT_SW_PIN, &input_queue);
-
     static UI ui("UI", &input_queue);
     xTaskCreate(network_task, "NETWORK_TASK", 6000, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
 
+    static PicoI2C i2c_0 { 0 };
+    static Eeprom eeprom { i2c_0 };
+    xTaskCreate(loader_task, "loader", 256, (void *) &eeprom, tskIDLE_PRIORITY + 1, nullptr);
+    //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
+    //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(modbus_task, "Modbus", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(i2c_task, "i2c test", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);

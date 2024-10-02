@@ -6,7 +6,8 @@ add_executable(${ProjectName}
         blinker.cpp
         blinker.h
         RotaryDecoder.cpp
-        #eeprom.cpp
+        eeprom.cpp
+        SettingsDispatcher.cpp
 
 #        ipstack/IPStack.cpp
 #        ipstack/IPStack.h
