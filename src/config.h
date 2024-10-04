@@ -8,6 +8,7 @@
 #define BTN0_PIN 9
 #define BTN1_PIN 8
 #define BTN2_PIN 7
+#define ROT_SW_PIN 12
 
 #define ROT_A_PIN 10
 #define ROT_B_PIN 11

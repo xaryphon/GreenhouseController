@@ -2,7 +2,6 @@
 #include <sstream>
 #include <pico/cyw43_arch.h>
 #include "FreeRTOS.h"
-#include "RotaryDecoder.h"
 #include "task.h"
 #include "semphr.h"
 #include "hardware/gpio.h"
@@ -11,12 +10,18 @@
 
 #include "config.h"
 #include "button.h"
+#include "network.h"
+#include "ui.h"
+#include "RotaryDecoder.h"
 
 #include "hardware/timer.h"
 extern "C" {
 uint32_t read_runtime_ctr(void) {
     return timer_hw->timerawl;
 }
+TLS_CLIENT_T* tls_client_init(void);
+bool network_connect(const char *ssid, const char *pwd);
+int tls_request(TLS_CLIENT_T_ *client, const char *request, struct altcp_tls_config *conf);
 }
 
 #include "blinker.h"
@@ -39,54 +44,6 @@ struct task_params {
     QueueHandle_t queue;
     uint pin;
 };
-
-void test_task(void *param) {
-    task_params *tpr = (task_params *) param;
-    uint32_t value;
-
-    while (true) {
-        if (xQueueReceive(tpr->queue, static_cast<void *>(&value), pdMS_TO_TICKS(5000)) == pdTRUE) {
-            printf("\n%lu\n", value);
-        }
-    }
-}
-
-void blink_task(void *param)
-{
-    auto lpr = (led_params *) param;
-    const uint led_pin = lpr->pin;
-    const uint delay = pdMS_TO_TICKS(lpr->delay);
-    gpio_init(led_pin);
-    gpio_set_dir(led_pin, GPIO_OUT);
-    while (true) {
-        gpio_put(led_pin, true);
-        vTaskDelay(delay);
-        gpio_put(led_pin, false);
-        vTaskDelay(delay);
-    }
-}
-
-void gpio_task(void *param) {
-    (void) param;
-    const uint button_pin = 9;
-    const uint led_pin = 22;
-    const uint delay = pdMS_TO_TICKS(250);
-    gpio_init(led_pin);
-    gpio_set_dir(led_pin, GPIO_OUT);
-    gpio_init(button_pin);
-    gpio_set_dir(button_pin, GPIO_IN);
-    gpio_set_pulls(button_pin, true, false);
-    gpio_set_irq_enabled_with_callback(button_pin, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
-    while(true) {
-        if(xSemaphoreTake(gpio_sem, portMAX_DELAY) == pdTRUE) {
-            //std::cout << "button event\n";
-            gpio_put(led_pin, 1);
-            vTaskDelay(delay);
-            gpio_put(led_pin, 0);
-            vTaskDelay(delay);
-        }
-    }
-}
 
 void serial_task(void *param)
 {
@@ -121,14 +78,43 @@ void serial_task(void *param)
 void modbus_task(void *param);
 void display_task(void *param);
 void i2c_task(void *param);
-extern "C" {
-    void tls_test(void);
-}
-void tls_task(void *param)
-{
-    tls_test();
+
+void network_task(void *param) {
+    auto *tpr = (task_params *) param;
+
+    bool connected = network_connect(WIFI_SSID, WIFI_PASSWORD);
+    struct altcp_tls_config *tls_config = NULL;
+    tls_config = altcp_tls_create_config_client(NULL, 0);
+    mbedtls_ssl_conf_authmode((mbedtls_ssl_config *)tls_config, MBEDTLS_SSL_VERIFY_OPTIONAL);
+    TLS_CLIENT_T *client = tls_client_init();
+    std::stringstream request;
+
     while(true) {
-        vTaskDelay(100);
+        /*
+         * seems reconnecting is done automatically in the background and this is not needed
+         * though reconnecting might be a different case
+        while(!connected) {
+            connected = network_connect(WIFI_SSID, WIFI_PASSWORD);
+        }*/
+        if (connected) {
+            request << "POST /update.json"
+                    << "?field1=" << 70  // current co2 level
+                    << "&field2=" << 12  // humidity
+                    << "&field3=" << 55  // temp
+                    << "&field4=" << 100 // fan speed
+                    << "&field5=" << 0   // target co2 level
+                    << "&api_key=B7C4VLKMNBYD4HLJ&talkback_key=K4J932OFNIJEGD9A HTTP/1.1\r\n"
+                    << "Host:api.thingspeak.com\r\nConnection:keep-alive\r\n\r\n";
+            printf("\n%s", request.str().c_str());
+            printf("sending request...\n");
+            int new_target_or_whatever = tls_request(client, request.str().c_str(), tls_config);
+            request.str("");
+            if (new_target_or_whatever == 45) {
+                // need to test connecting to another wlan
+                network_connect("another ssid", "another pwd");
+            }
+        }
+        vTaskDelay(5000);
     }
 }
 
@@ -141,39 +127,29 @@ static void irq_callback(uint pin, uint32_t event_mask) {
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void tmp_task(void *param) {
-    xQueueHandle input_queue = (xQueueHandle)param;
-    for (;;) {
-        uint pin;
-        xQueueReceive(input_queue, &pin, portMAX_DELAY);
-        printf("%u\n", pin);
-    }
-}
 
-int main()
-{
-    static led_params lp1 = { .pin = 20, .delay = 300 };
-    QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
+int main() {
     stdio_init_all();
     printf("\nBoot\n");
+
+    gpio_sem = xSemaphoreCreateBinary();
     gpio_set_irq_callback(irq_callback);
-    static task_params tp1 = { .queue = input_queue};
-    xTaskCreate(test_task, "test", 256, (void *) &tp1, tskIDLE_PRIORITY + 1, nullptr);
+    QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
     static RotaryDecoder rotary_decoder(input_queue, ROT_A_PIN, ROT_B_PIN, 4);
     g_rotary_decoder = &rotary_decoder;
     irq_set_enabled(IO_IRQ_BANK0, true);
+
     static Button btn0("BTN0", BTN0_PIN, &input_queue);
     static Button btn1("BTN1", BTN1_PIN, &input_queue);
     static Button btn2("BTN2", BTN2_PIN, &input_queue);
     static Button btnr("BTNR", ROT_SW_PIN, &input_queue);
-    gpio_sem = xSemaphoreCreateBinary();
-    //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
-    //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
+
+    static UI ui("UI", &input_queue);
+    xTaskCreate(network_task, "NETWORK_TASK", 6000, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
+
     //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(modbus_task, "Modbus", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
-    //xTaskCreate(display_task, "SSD1306", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(i2c_task, "i2c test", 512, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
-    //xTaskCreate(tls_task, "tls test", 6000, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
 
     vTaskStartScheduler();
 
@@ -243,19 +219,6 @@ void modbus_task(void *param) {
 
 }
 
-#include "ssd1306os.h"
-void display_task(void *param)
-{
-    auto i2cbus{std::make_shared<PicoI2C>(1, 400000)};
-    ssd1306os display(i2cbus);
-    display.fill(0);
-    display.text("Boot", 0, 0);
-    display.show();
-    while(true) {
-        vTaskDelay(100);
-    }
-
-}
 
 void i2c_task(void *param) {
     auto i2cbus{std::make_shared<PicoI2C>(0, 100000)};

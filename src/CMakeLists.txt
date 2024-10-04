@@ -6,13 +6,13 @@ add_executable(${ProjectName}
         blinker.cpp
         blinker.h
         RotaryDecoder.cpp
-        eeprom.cpp
+        #eeprom.cpp
 
 #        ipstack/IPStack.cpp
 #        ipstack/IPStack.h
         ipstack/lwipopts.h
         ipstack/tls_common.c
-        ipstack/picow_tls_client.c
+        #ipstack/picow_tls_client.c
         ipstack/lwipopts_tls.h
 
         i2c/PicoI2C.cpp
@@ -39,6 +39,12 @@ add_executable(${ProjectName}
         button.cpp
         button.h
         config.h
+        network.c
+        network.h
+        ui.cpp
+        ui.h
+        RotaryDecoder.cpp
+        ../cJSON/cJSON.c
 )
 
 target_include_directories(${ProjectName} PRIVATE
@@ -48,11 +54,12 @@ target_include_directories(${ProjectName} PRIVATE
         i2c
         display
         ipstack
+        ../cJSON
 )
 
 target_compile_definitions(${ProjectName} PRIVATE
-        WIFI_SSID=\"$ENV{WIFI_SSID}\"
-        WIFI_PASSWORD=\"$ENV{WIFI_PASSWORD}\"
+        #WIFI_SSID=\"$ENV{WIFI_SSID}\"
+        #WIFI_PASSWORD=\"$ENV{WIFI_PASSWORD}\"
         NO_SYS=0            # don't want NO_SYS (generally this would be in your lwipopts.h)
         PICO_CYW43_ARCH_DEFAULT_COUNTRY_CODE=CYW43_COUNTRY_FINLAND
 )
