@@ -1,14 +1,18 @@
 #include <iostream>
 #include <sstream>
 #include <pico/cyw43_arch.h>
+#include "Co2Probe.h"
+#include "Controller.h"
 #include "FreeRTOS.h"
 #include "PicoI2C.h"
 #include "RotaryDecoder.h"
+#include "SettingsDispatcher.h"
 #include "eeprom.h"
 #include "task.h"
 #include "semphr.h"
 #include "hardware/gpio.h"
 #include "PicoOsUart.h"
+#include "ModbusClient.h"
 #include "ssd1306.h"
 
 #include "config.h"
@@ -132,21 +136,8 @@ static void irq_callback(uint pin, uint32_t event_mask) {
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-
-void loader_task(void *param) {
-    Eeprom *eeprom = (Eeprom*)param;
-
-    eeprom->LoadBlocking();
-    eeprom->QueueTargetPPM(6);
-    eeprom->QueueNetworkCredentials("Hello", "World");
-    eeprom->LoadBlocking();
-
-    while (true) {
-        vTaskDelay(1000);
-    }
-}
-
-int main() {
+int main()
+{
     static led_params lp1 = { .pin = 20, .delay = 300 };
     QueueHandle_t input_queue = xQueueCreate(5, sizeof(uint));
     stdio_init_all();
@@ -165,9 +156,14 @@ int main() {
     static UI ui("UI", &input_queue);
     xTaskCreate(network_task, "NETWORK_TASK", 6000, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
 
+    static auto uart = std::make_shared<PicoOsUart>(1, 4, 5, 9600, 2);
+    static auto modbus = std::make_shared<ModbusClient>(uart);
+    static Co2Probe co2_probe { modbus };
+    static Motor motor { modbus };
     static PicoI2C i2c_0 { 0 };
     static Eeprom eeprom { i2c_0 };
-    xTaskCreate(loader_task, "loader", 256, (void *) &eeprom, tskIDLE_PRIORITY + 1, nullptr);
+    static Controller controller { &eeprom, 27, &co2_probe, &motor };
+    static SettingsDispatcher settings { &eeprom, &controller };
     //xTaskCreate(blink_task, "LED_1", 256, (void *) &lp1, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(gpio_task, "BUTTON", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);
     //xTaskCreate(serial_task, "UART1", 256, (void *) nullptr, tskIDLE_PRIORITY + 1, nullptr);

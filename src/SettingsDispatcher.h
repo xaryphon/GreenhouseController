@@ -1,13 +1,12 @@
 #pragma once
 
+#include "Controller.h"
 #include "eeprom.h"
 #include <cstdint>
 
 class SettingsDispatcher {
 public:
-    SettingsDispatcher(Eeprom *eeprom)
-    : m_eeprom(eeprom)
-    {}
+    SettingsDispatcher(Eeprom *eeprom, Controller *controller);
 
     void SetTargetPPM(uint16_t ppm);
 
@@ -16,5 +15,6 @@ public:
 
 private:
     Eeprom *m_eeprom;
+    Controller *m_controller;
 };
 

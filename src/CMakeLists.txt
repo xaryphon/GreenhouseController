@@ -8,6 +8,9 @@ add_executable(${ProjectName}
         RotaryDecoder.cpp
         eeprom.cpp
         SettingsDispatcher.cpp
+        Co2Probe.cpp
+        Motor.cpp
+        Controller.cpp
 
 #        ipstack/IPStack.cpp
 #        ipstack/IPStack.h

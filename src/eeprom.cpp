@@ -1,4 +1,5 @@
 #include "eeprom.h"
+#include "SettingsDispatcher.h"
 #include "config.h"
 #include <cstring>
 #include <mutex>
@@ -60,9 +61,10 @@ static void eeprom_load_defaults(EepromData *data) {
     strncpy(data->tmp.password, data->page.password, NETWORK_PASSWORD_MAX_LENGTH);
 }
 
-void Eeprom::LoadBlocking() {
+void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
     std::lock_guard<Fmutex> flush_guard { m_flush_mutex };
     std::lock_guard<Fmutex> access_guard { m_access_mutex };
+    m_loading = true;
     uint8_t *ptr = reinterpret_cast<uint8_t*>(&m_data->page);
     uint processed = m_i2c.transaction(EEPROM_DEVICE_ADDRESS, ptr, EEPROM_ADDRESS_SIZE, ptr + EEPROM_ADDRESS_SIZE, EEPROM_PAGE_SIZE);
     if (processed != EEPROM_ADDRESS_SIZE + EEPROM_PAGE_SIZE) {
@@ -84,6 +86,11 @@ void Eeprom::LoadBlocking() {
     m_data->tmp.ppm_target = m_data->page.ppm_target;
     strncpy(m_data->tmp.ssid, m_data->page.ssid, NETWORK_SSID_MAX_LENGTH);
     strncpy(m_data->tmp.password, m_data->page.password, NETWORK_PASSWORD_MAX_LENGTH);
+
+    settings->SetTargetPPM(m_data->page.ppm_target);
+    settings->SetNetworkCredentials(m_data->page.ssid, m_data->page.password);
+
+    m_loading = false;
 }
 
 static bool eeprom_should_flush(EepromData &data) {
@@ -122,6 +129,8 @@ void Eeprom::task()
 
 void Eeprom::QueueTargetPPM(uint16_t ppm)
 {
+    if (m_loading)
+        return;
     std::lock_guard<Fmutex> access_guard { m_access_mutex };
     m_data->tmp.ppm_target = ppm;
     xSemaphoreGive(m_should_flush);
@@ -129,6 +138,8 @@ void Eeprom::QueueTargetPPM(uint16_t ppm)
 
 void Eeprom::QueueNetworkCredentials(const char *ssid, const char *password)
 {
+    if (m_loading)
+        return;
     std::lock_guard<Fmutex> access_guard { m_access_mutex };
     strncpy(m_data->tmp.ssid, ssid, NETWORK_SSID_MAX_LENGTH);
     strncpy(m_data->tmp.password, password, NETWORK_PASSWORD_MAX_LENGTH);

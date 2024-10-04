@@ -3,13 +3,14 @@
 #include "PicoI2C.h"
 #include <memory>
 
+class SettingsDispatcher;
 struct EepromData;
 class Eeprom {
 public:
     Eeprom(PicoI2C &i2c);
     ~Eeprom();
 
-    void LoadBlocking();
+    void LoadBlocking(SettingsDispatcher *settings);
 
     void QueueTargetPPM(uint16_t ppm);
     void QueueNetworkCredentials(const char *ssid, const char *password);
@@ -23,5 +24,6 @@ private:
     Fmutex m_flush_mutex;
     Fmutex m_access_mutex;
     std::unique_ptr<EepromData> m_data;
+    bool m_loading = false;
 };
 
