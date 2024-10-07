@@ -9,9 +9,11 @@ struct EepromData {
     struct {
         uint16_t address;
         uint16_t ppm_target;
-        uint8_t reserved[4];
+        uint8_t reserved[2];
         char ssid[NETWORK_SSID_MAX_LENGTH];
+        char reserved_nul;
         char password[NETWORK_PASSWORD_MAX_LENGTH];
+        char reserved_nul2;
         uint16_t checksum;
     } page;
     struct {
@@ -59,6 +61,8 @@ static void eeprom_load_defaults(EepromData *data) {
     data->tmp.ppm_target = data->page.ppm_target;
     strncpy(data->tmp.ssid, data->page.ssid, NETWORK_SSID_MAX_LENGTH);
     strncpy(data->tmp.password, data->page.password, NETWORK_PASSWORD_MAX_LENGTH);
+    data->page.reserved_nul = '\0';
+    data->page.reserved_nul2 = '\0';
 }
 
 void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
@@ -72,6 +76,8 @@ void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
         eeprom_load_defaults(m_data.get());
         return;
     }
+    m_data->page.reserved_nul = '\0';
+    m_data->page.reserved_nul2 = '\0';
 
     printf("PPM  : %u\n", +m_data->page.ppm_target);
     printf("SSID : %.*s\n", NETWORK_SSID_MAX_LENGTH, m_data->page.ssid);
