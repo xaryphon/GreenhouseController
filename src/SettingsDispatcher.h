@@ -2,11 +2,12 @@
 
 #include "Controller.h"
 #include "eeprom.h"
+#include "network.h"
 #include <cstdint>
 
 class SettingsDispatcher {
 public:
-    SettingsDispatcher(Eeprom *eeprom, Controller *controller);
+    SettingsDispatcher(Eeprom *eeprom, Controller *controller, Network *network);
 
     void SetTargetPPM(uint16_t ppm);
 
@@ -16,5 +17,6 @@ public:
 private:
     Eeprom *m_eeprom;
     Controller *m_controller;
+    Network *m_network;
 };
 

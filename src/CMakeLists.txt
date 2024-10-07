@@ -40,12 +40,14 @@ add_executable(${ProjectName}
         button.cpp
         button.h
         config.h
-        network.c
+        network_client.c
         network.h
         ui.cpp
         ui.h
         RotaryDecoder.cpp
         ../cJSON/cJSON.c
+        network.cpp
+        network_client.h
 )
 
 target_include_directories(${ProjectName} PRIVATE
@@ -72,7 +74,6 @@ target_link_libraries(${ProjectName}
         pico_cyw43_arch_lwip_sys_freertos
         pico_lwip_mbedtls
         pico_mbedtls
-
 )
 
 # Ignore warnings from lwip code

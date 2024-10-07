@@ -21,8 +21,11 @@
 #ifndef GREENHOUSE_CONTROLLER_API_H
 #define GREENHOUSE_CONTROLLER_API_H
 
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
@@ -35,17 +38,23 @@
 #include "task.h"
 #include "queue.h"
 #include "cJSON.h"
+#include "network_client.h"
 
-typedef struct TLS_CLIENT_T_ {
-    struct altcp_pcb *pcb;
-    bool complete;
-    int error;
-    const char *http_request;
-    int timeout;
-} TLS_CLIENT_T;
-/*
-TLS_CLIENT_T* tls_client_init(void);
-bool network_connect(const char *ssid, const char *pwd);
-void tls_request(TLS_CLIENT_T *client, const char *request);
-*/
+
+class Network{
+public:
+    explicit Network(std::string name_);
+    void set_creds(const char *ssid, const char *pwd);
+private:
+    void run();
+    static void runner(void *params);
+    bool connect();
+    const std::string m_name;
+    TLS_CLIENT_T *m_client;
+    struct altcp_tls_config *m_tls_config;
+    std::string m_ssid;
+    std::string m_pwd;
+    std::stringstream m_request;
+    bool m_connected;
+};
 #endif //GREENHOUSE_CONTROLLER_API_H

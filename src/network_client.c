@@ -1,4 +1,4 @@
-#include "network.h"
+#include "network_client.h"
 
 static int target = 0;
 

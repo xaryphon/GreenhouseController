@@ -4,6 +4,11 @@
 
 #include "ui.h"
 
+// custom enter key symbol for keyboard + palettes for colour inversion
+static mono_vlsb enter(enter_key, 8, 8);
+static mono_vlsb pal_bw(palette_bw, 2, 1);
+static mono_vlsb pal_wb(palette_wb, 2, 1);
+
 UI::UI(std::string name_, QueueHandle_t *queue_)
 : m_name(name_)
 , m_queue(queue_)
@@ -21,7 +26,7 @@ UI::UI(std::string name_, QueueHandle_t *queue_)
         }
     }
 
-    xTaskCreate(UI::runner, m_name.c_str(), 256, (void *) this, tskIDLE_PRIORITY + 1, &m_handle);
+    xTaskCreate(UI::runner, m_name.c_str(), 256, (void *) this, tskIDLE_PRIORITY + 1, nullptr);
 }
 
 void UI::run() {
@@ -47,26 +52,26 @@ void UI::runner(void *params) {
 }
 
 void UI::input(uint input) {
-    if (m_current == "status") main(input);
+    if (m_current == "status") status(input);
     else if (m_current == "settings") settings(input);
     else if (m_current == "CO2") co2(input);
     else if (m_current == "Network") network(input);
 }
 
 // menu keybind logic
-void UI::main(uint input) {
+void UI::status(uint input) {
     switch (input) {
         case ROT_SW_PIN:
+        case BTN1_PIN:
             m_current = "settings";
             m_selected_y = 0;
             break;
         // do we leave unbound keys listed here for clarity or remove them for compactness
-        case ROT_A_PIN ... ROT_B_PIN:
+        case ROT_A_PIN:
+        case ROT_B_PIN:
             break;
         case BTN0_PIN:
             m_selected_y == 0 ? m_selected_y = 1 : m_selected_y = 0;
-            break;
-        case BTN1_PIN:
             break;
         case BTN2_PIN:
             break;
@@ -74,36 +79,32 @@ void UI::main(uint input) {
             break;
     }
 }
+
 void UI::settings(uint input){
     switch (input) {
         case ROT_SW_PIN:
+        case BTN1_PIN:
             m_menu[m_current][m_selected_y] == "Back" ? m_current = "status" : m_current = m_menu[m_current][m_selected_y];
             m_selected_y = 0;
             m_selected_x = 0;
             if (m_current == "CO2") m_target = 850;
             if (m_current == "Network") m_target = 0;
             break;
-        // maybe separate rot_a and rot_b for clarity
         case ROT_A_PIN:
         case ROT_B_PIN:
-            m_selected_y = (input == ROT_A_PIN ? m_selected_y + 1 : m_selected_y > 0 ? m_selected_y - 1 : 2) % m_menu["settings"].size();
-            break;
         case BTN0_PIN:
-            break;
-        case BTN1_PIN:
-            break;
         case BTN2_PIN:
+            m_selected_y = ((input == ROT_A_PIN) || (input == BTN0_PIN) ? m_selected_y + 1 : m_selected_y > 0 ? m_selected_y - 1 : 2) % m_menu["settings"].size();
             break;
         default:
             break;
     }
-
 }
+
 void UI::co2(uint input){
     switch (input) {
         case ROT_SW_PIN:
             // send m_target to controller
-
         case BTN1_PIN:
             m_current = "settings";
             m_target = 850;
@@ -119,7 +120,6 @@ void UI::co2(uint input){
         case BTN0_PIN:
             if (m_target > 200) m_target -= 1;
             break;
-
         case BTN2_PIN:
             if (m_target < 1500) m_target += 1;
             break;
@@ -138,25 +138,27 @@ void UI::network(uint input){
                     break;
                 }
                 else if (m_target == 1) {
-                    printf("sending data\n");
+                    printf("sending data %s %s\n", m_input[0].c_str(), m_input[1].c_str());
                     //send data
                 }
             }
             else {
-                m_text[m_target].push_back(m_keyboard[m_selected_y][m_selected_x]);
+                if (m_input[m_target].size() < (m_target == 0 ? NETWORK_SSID_MAX_LENGTH : NETWORK_PASSWORD_MAX_LENGTH)) {
+                    m_input[m_target].push_back(m_keyboard[m_selected_y][m_selected_x]);
+                }
                 break;
             }
         case BTN1_PIN:
             if (m_selected_y == 5 && m_selected_x == 15) {
                 m_current = "settings";
-                m_text[0] = "";
-                m_text[1] = "";
+                m_input[0] = "";
+                m_input[1] = "";
                 m_selected_y = 0;
                 m_selected_x = 0;
                 m_target = 0;
             }
             else {
-                m_text[m_target].pop_back();
+                m_input[m_target].pop_back();
             }
             break;
         case ROT_A_PIN:
@@ -184,9 +186,6 @@ void UI::update_display(ssd1306os &display) {
     char text[8][16] = {};
     display.fill(0);
 
-    //m_menu["status"] = {"Status 1", "Status 2"};
-    //m_menu["settings"] = {"Back", "CO2", "Network"};
-
     if (m_current == "status") {
         // get sensor data here somehow
         sprintf(text[0], "%s", m_menu[m_current][m_selected_y].c_str());
@@ -206,12 +205,13 @@ void UI::update_display(ssd1306os &display) {
     }
     else if (m_current == "CO2") {
         sprintf(text[0], "%s", m_current.c_str());
-        sprintf(text[1], "Max:1500, Min:200");
+        sprintf(text[1], "Max: 1500");
+        sprintf(text[2], "Min:200");
         sprintf(text[4], "CO2 target: %d", m_target);
     }
     else if (m_current == "Network") {
         sprintf(text[0], "%s %d %d %d %s", m_current.c_str(), m_selected_y, m_selected_x, m_target, m_target == 0 ? "SSID" : "PWD");
-        sprintf(text[1], "%s", m_text[m_target].substr(m_text[m_target].size() < 15 ? 0 : m_text[m_target].size() - 15).c_str());
+        sprintf(text[1], "%s", m_input[m_target].substr(m_input[m_target].size() < 15 ? 0 : m_input[m_target].size() - 15).c_str());
         sprintf(text[2], "%s", m_keyboard[0]);
     }
 
@@ -226,7 +226,7 @@ void UI::update_display(ssd1306os &display) {
         // keyboard display in network
         display.text(text[0], 0 * 8, 0 * 8, 1);
         display.text(text[1], 1 * 8, 1 * 8, 1);
-        if (m_text[m_target].size() > 15) {
+        if (m_input[m_target].size() > 15) {
             display.rect(0, 1 * 8, 8, 8, 1, true);
             display.text("<", 0, 1 * 8, 0);
         }
@@ -237,6 +237,7 @@ void UI::update_display(ssd1306os &display) {
                 display.text(c, j * 8, i * 8, i == m_selected_y + 2 ? j == m_selected_x ? 0 : 1 : 1);
             }
         }
+        display.blit(enter, 15 * 8, 7 * 8, 0xFFF, m_selected_y == 5 && m_selected_x == 15 ? &pal_wb : &pal_bw);
     }
     display.show();
 }
