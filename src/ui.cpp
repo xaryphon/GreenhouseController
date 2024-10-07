@@ -11,13 +11,14 @@ static mono_vlsb enter(enter_key, 8, 8);
 static mono_vlsb pal_bw(palette_bw, 2, 1);
 static mono_vlsb pal_wb(palette_wb, 2, 1);
 
-UI::UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo)
+UI::UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller)
 : m_name(name_)
 , m_queue(queue_)
 , m_settings(settings)
 , m_co2_probe(co2_probe)
 , m_motor(motor)
 , m_atmo(atmo)
+, m_controller(controller)
 , m_current("status")
 , m_selected_y(0)
 , m_selected_x(0)
@@ -97,7 +98,7 @@ void UI::settings(uint input){
             m_menu[m_current][m_selected_y] == "Back" ? m_current = "status" : m_current = m_menu[m_current][m_selected_y];
             m_selected_y = 0;
             m_selected_x = 0;
-            if (m_current == "CO2") m_target = 850;
+            if (m_current == "CO2") m_target = m_controller->GetTargetPPM();
             if (m_current == "Network") m_target = 0;
             break;
         case ROT_A_PIN:
@@ -193,7 +194,7 @@ void UI::network(uint input){
 }
 
 void UI::update_display(ssd1306os &display) {
-    char text[8][16] = {};
+    char text[8][17] = {};
     display.fill(0);
 
     if (m_current == "status") {
@@ -204,7 +205,7 @@ void UI::update_display(ssd1306os &display) {
             float temp = 27.f - (temp_raw / 4095.0f * 3.3f - 0.706f) / 0.001721f;
             sprintf(text[2], "Tcore %5.1f C  ", temp);
             sprintf(text[3], "  CO2 %3u   ppm", +m_co2_probe->GetLastPPM());
-            sprintf(text[4], "Motor %3u   RPM", +m_motor->GetRPM());
+            sprintf(text[4], "Motor %5.1f %%  ", m_motor->GetPower() / 10.f);
             sprintf(text[5], "   RH %5.1f %%RH", m_atmo->GetRelativeHumidity() / 10.f);
             sprintf(text[6], " Temp %5.1f C  ", m_atmo->GetTemperature() / 10.f);
         }
@@ -221,9 +222,10 @@ void UI::update_display(ssd1306os &display) {
     }
     else if (m_current == "CO2") {
         sprintf(text[0], "%s", m_current.c_str());
-        sprintf(text[1], "Max: 1500");
-        sprintf(text[2], "Min:200");
-        sprintf(text[4], "CO2 target: %d", m_target);
+        sprintf(text[1], "Max:        1500");
+        sprintf(text[2], "Min:         200");
+        sprintf(text[3], "Current:    %4d", +m_controller->GetTargetPPM());
+        sprintf(text[4], "CO2 target: %4d", m_target);
     }
     else if (m_current == "Network") {
         sprintf(text[0], "%s %d %d %d %s", m_current.c_str(), m_selected_y, m_selected_x, m_target, m_target == 0 ? "SSID" : "PWD");

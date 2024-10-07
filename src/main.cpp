@@ -71,7 +71,7 @@ int main()
     static Eeprom eeprom { i2c_0 };
     static Controller controller { &eeprom, CO2_DISSIPATOR_PIN, &co2_probe, &motor, &atmo };
     static SettingsDispatcher settings { &eeprom, &controller, &network };
-    static UI ui("UI", &input_queue, &settings, &co2_probe, &motor, &atmo);
+    static UI ui("UI", &input_queue, &settings, &co2_probe, &motor, &atmo, &controller);
 
     vTaskStartScheduler();
 

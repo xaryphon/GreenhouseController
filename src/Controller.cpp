@@ -41,7 +41,6 @@ void Controller::run()
 {
     m_eeprom->LoadBlocking(m_settings);
     while (true) {
-        m_motor->Read();
         m_atmo->Read();
         float target = m_target_ppm;
         float co2 = m_co2_probe->ReadPPM();

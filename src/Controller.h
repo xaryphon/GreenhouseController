@@ -15,6 +15,10 @@ public:
         m_target_ppm = target;
     }
 
+    uint16_t GetTargetPPM() {
+        return m_target_ppm;
+    }
+
 private:
     static void entry(void*);
     void run();

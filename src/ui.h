@@ -11,6 +11,7 @@
 #include <map>
 #include "Atmosphere.h"
 #include "Co2Probe.h"
+#include "Controller.h"
 #include "Motor.h"
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
@@ -39,7 +40,7 @@ enum menu {
 class SettingsDispatcher;
 class UI{
 public:
-    UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo);
+    UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller);
 private:
     void run();
     static void runner(void *params);
@@ -55,6 +56,7 @@ private:
     Co2Probe *m_co2_probe;
     Motor *m_motor;
     Atmosphere *m_atmo;
+    Controller *m_controller;
     TaskHandle_t m_handle;
     std::map<std::string, std::vector<std::string>> m_menu;
     std::string m_current;
