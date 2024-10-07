@@ -7,6 +7,7 @@ add_executable(${ProjectName}
         SettingsDispatcher.cpp
         Co2Probe.cpp
         Motor.cpp
+        Atmosphere.cpp
         Controller.cpp
 
 #        ipstack/IPStack.cpp
@@ -70,6 +71,7 @@ target_compile_definitions(${ProjectName} PRIVATE
 target_link_libraries(${ProjectName} 
         pico_stdlib
         hardware_i2c
+        hardware_adc
         FreeRTOS-Kernel-Heap4
         pico_cyw43_arch_lwip_sys_freertos
         pico_lwip_mbedtls

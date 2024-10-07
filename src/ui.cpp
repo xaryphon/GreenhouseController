@@ -3,15 +3,21 @@
 //
 
 #include "ui.h"
+#include "SettingsDispatcher.h"
+#include "hardware/adc.h"
 
 // custom enter key symbol for keyboard + palettes for colour inversion
 static mono_vlsb enter(enter_key, 8, 8);
 static mono_vlsb pal_bw(palette_bw, 2, 1);
 static mono_vlsb pal_wb(palette_wb, 2, 1);
 
-UI::UI(std::string name_, QueueHandle_t *queue_)
+UI::UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo)
 : m_name(name_)
 , m_queue(queue_)
+, m_settings(settings)
+, m_co2_probe(co2_probe)
+, m_motor(motor)
+, m_atmo(atmo)
 , m_current("status")
 , m_selected_y(0)
 , m_selected_x(0)
@@ -25,6 +31,10 @@ UI::UI(std::string name_, QueueHandle_t *queue_)
             ++c;
         }
     }
+    
+    adc_init();
+    adc_set_temp_sensor_enabled(true);
+    adc_select_input(4);
 
     xTaskCreate(UI::runner, m_name.c_str(), 256, (void *) this, tskIDLE_PRIORITY + 1, nullptr);
 }
@@ -104,7 +114,8 @@ void UI::settings(uint input){
 void UI::co2(uint input){
     switch (input) {
         case ROT_SW_PIN:
-            // send m_target to controller
+            m_settings->SetTargetPPM(m_target);
+
         case BTN1_PIN:
             m_current = "settings";
             m_target = 850;
@@ -138,8 +149,7 @@ void UI::network(uint input){
                     break;
                 }
                 else if (m_target == 1) {
-                    printf("sending data %s %s\n", m_input[0].c_str(), m_input[1].c_str());
-                    //send data
+                    m_settings->SetNetworkCredentials(m_input[0].c_str(), m_input[1].c_str());
                 }
             }
             else {
@@ -190,7 +200,13 @@ void UI::update_display(ssd1306os &display) {
         // get sensor data here somehow
         sprintf(text[0], "%s", m_menu[m_current][m_selected_y].c_str());
         if (m_menu[m_current][m_selected_y] == "Status 1") {
-            sprintf(text[2], "some sensor %d", 69);
+            uint16_t temp_raw = adc_read();
+            float temp = 27.f - (temp_raw / 4095.0f * 3.3f - 0.706f) / 0.001721f;
+            sprintf(text[2], "Tcore %5.1f C  ", temp);
+            sprintf(text[3], "  CO2 %3u   ppm", +m_co2_probe->GetLastPPM());
+            sprintf(text[4], "Motor %3u   RPM", +m_motor->GetRPM());
+            sprintf(text[5], "   RH %5.1f %%RH", m_atmo->GetRelativeHumidity() / 10.f);
+            sprintf(text[6], " Temp %5.1f C  ", m_atmo->GetTemperature() / 10.f);
         }
         else if (m_menu[m_current][m_selected_y] == "Status 2") {
             sprintf(text[2], "another %d", 420);

@@ -9,13 +9,15 @@
 #include <cstring>
 #include <vector>
 #include <map>
+#include "Atmosphere.h"
+#include "Co2Probe.h"
+#include "Motor.h"
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "config.h"
 #include "display/ssd1306os.h"
-
 
 // custom enter key symbol for keyboard + palettes for colour inversion
 const unsigned char enter_key[] = {0x00, 0x10, 0x38, 0x7C, 0x10, 0x10, 0x1E, 0x00};
@@ -34,9 +36,10 @@ enum menu {
     NETWORK = 6
 };
 
+class SettingsDispatcher;
 class UI{
 public:
-    UI(std::string name_, QueueHandle_t *queue_);
+    UI(std::string name_, QueueHandle_t *queue_, SettingsDispatcher *settings, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo);
 private:
     void run();
     static void runner(void *params);
@@ -48,6 +51,11 @@ private:
     void network(uint input);
     const std::string m_name;
     QueueHandle_t *m_queue;
+    SettingsDispatcher *m_settings;
+    Co2Probe *m_co2_probe;
+    Motor *m_motor;
+    Atmosphere *m_atmo;
+    TaskHandle_t m_handle;
     std::map<std::string, std::vector<std::string>> m_menu;
     std::string m_current;
     uint m_selected_y;

@@ -6,15 +6,16 @@
 #include "task.h"
 #include <cstdio>
 
-Controller::Controller(Eeprom *eeprom, uint co2_dissipator_pin, Co2Probe *co2_probe, Motor *motor)
+Controller::Controller(Eeprom *eeprom, uint co2_dissipator_pin, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo)
 : m_eeprom(eeprom)
 , m_co2_dissipator_pin(co2_dissipator_pin)
 , m_co2_probe(co2_probe)
 , m_motor(motor)
+, m_atmo(atmo)
 {
     gpio_init(co2_dissipator_pin);
     gpio_set_dir(co2_dissipator_pin, GPIO_OUT);
-    xTaskCreate(entry, "Controller", 256, this, TASK_CONTROLLER_PRIORITY, nullptr);
+    xTaskCreate(entry, "Controller", 512, this, TASK_CONTROLLER_PRIORITY, nullptr);
 }
 
 void Controller::entry(void *param)
@@ -40,6 +41,8 @@ void Controller::run()
 {
     m_eeprom->LoadBlocking(m_settings);
     while (true) {
+        m_motor->Read();
+        m_atmo->Read();
         float target = m_target_ppm;
         float co2 = m_co2_probe->ReadPPM();
         float diff = co2 - target;
