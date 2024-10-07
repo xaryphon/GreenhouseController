@@ -38,7 +38,7 @@ Eeprom::Eeprom(PicoI2C &i2c)
 {
     memset(m_data.get(), 0, sizeof(EepromData));
     m_data->page.address = 0x0000;
-    xTaskCreate(task_entry, "EEPROM", 256, this, TASK_EEPROM_PRIORITY, nullptr);
+    xTaskCreate(task_entry, "EEPROM", 512, this, TASK_EEPROM_PRIORITY, nullptr);
 }
 
 Eeprom::~Eeprom() = default;
@@ -65,19 +65,34 @@ static void eeprom_load_defaults(EepromData *data) {
     data->page.reserved_nul2 = '\0';
 }
 
+bool TryReadEeprom(PicoI2C *i2c, uint8_t *ptr) {
+    uint processed = i2c->transaction(EEPROM_DEVICE_ADDRESS, ptr, EEPROM_ADDRESS_SIZE, ptr + EEPROM_ADDRESS_SIZE, EEPROM_PAGE_SIZE);
+    if (processed != EEPROM_ADDRESS_SIZE + EEPROM_PAGE_SIZE) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool TryReadEeprom(PicoI2C *i2c, uint8_t *ptr, int count) {
+    while (count-- > 0) {
+        if (TryReadEeprom(i2c, ptr))
+            return true;
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    return false;
+}
+
 void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
     std::lock_guard<Fmutex> flush_guard { m_flush_mutex };
     std::lock_guard<Fmutex> access_guard { m_access_mutex };
     m_loading = true;
     uint8_t *ptr = reinterpret_cast<uint8_t*>(&m_data->page);
-    uint processed = m_i2c.transaction(EEPROM_DEVICE_ADDRESS, ptr, EEPROM_ADDRESS_SIZE, ptr + EEPROM_ADDRESS_SIZE, EEPROM_PAGE_SIZE);
-    if (processed != EEPROM_ADDRESS_SIZE + EEPROM_PAGE_SIZE) {
+    if (!TryReadEeprom(&m_i2c, ptr, 5)) {
         printf("Failed to read from EEPROM\n");
         eeprom_load_defaults(m_data.get());
         return;
     }
-    m_data->page.reserved_nul = '\0';
-    m_data->page.reserved_nul2 = '\0';
 
     printf("PPM  : %u\n", +m_data->page.ppm_target);
     printf("SSID : %.*s\n", NETWORK_SSID_MAX_LENGTH, m_data->page.ssid);
@@ -88,6 +103,8 @@ void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
         eeprom_load_defaults(m_data.get());
         return;
     }
+    m_data->page.reserved_nul = '\0';
+    m_data->page.reserved_nul2 = '\0';
 
     m_data->tmp.ppm_target = m_data->page.ppm_target;
     strncpy(m_data->tmp.ssid, m_data->page.ssid, NETWORK_SSID_MAX_LENGTH);
@@ -128,6 +145,7 @@ void Eeprom::task()
             uint wrote = m_i2c.write(EEPROM_DEVICE_ADDRESS, ptr, EEPROM_ADDRESS_SIZE + EEPROM_PAGE_SIZE);
             if (wrote != sizeof(EepromData::page))
                 printf("Failed to write to EEPROM\n");
+            printf("Wrote to eeprom\n");
         }
         vTaskDelay(EEPROM_FLUSH_TIME_MS / portTICK_PERIOD_MS);
     }

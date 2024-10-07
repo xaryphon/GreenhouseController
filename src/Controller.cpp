@@ -18,7 +18,7 @@ Controller::Controller(Eeprom *eeprom, uint co2_dissipator_pin, Co2Probe *co2_pr
     gpio_init(co2_dissipator_pin);
     gpio_set_dir(co2_dissipator_pin, GPIO_OUT);
     xTaskCreate(entry, "Controller", 512, this, TASK_CONTROLLER_PRIORITY, nullptr);
-    xTaskCreate(entry, "GasGasGas", 128, this, TASK_GAS_PRIORITY, nullptr);
+    xTaskCreate(gas_entry, "GasGasGas", 256, this, TASK_GAS_PRIORITY, nullptr);
 }
 
 void Controller::gas_entry(void *param)
@@ -60,6 +60,7 @@ void Controller::set_fan_speed(uint speed) {
 
 void Controller::run()
 {
+    m_target_ppm = 850;
     m_eeprom->LoadBlocking(m_settings);
     while (true) {
         m_atmo->Read();
@@ -71,7 +72,7 @@ void Controller::run()
             set_fan_speed(1000);
         } else if (diff > 0) {
             if (diff > target * 0.1f) {
-                float new_speed = diff / 2000.f;
+                float new_speed = diff / 1000.f;
                 if (new_speed > 1.f)
                     new_speed = 1.f;
                 else if (new_speed < 0.025f)
@@ -82,8 +83,8 @@ void Controller::run()
             }
         } else {
             set_fan_speed(0);
-            if (diff < -(target * 0.1f)) {
-                gas_for_ms((uint)(-diff));
+            if (diff < -20) {
+                gas_for_ms((uint)(-diff * 4.f));
             }
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
