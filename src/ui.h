@@ -36,6 +36,9 @@ private:
     std::string m_current;
     uint m_selected_y;
     uint m_selected_x;
+    uint m_target;
+    std::string m_text[2];
+    char m_keyboard[6][16];
 };
 
 #endif //GREENHOUSE_CONTROLLER_UI_H

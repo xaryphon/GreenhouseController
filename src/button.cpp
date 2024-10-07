@@ -17,7 +17,6 @@ void Button::run() {
         if (!gpio_get(m_pin)) {
             if (m_debounce < 3) {
                 if (m_debounce == 2) {
-                    printf("pressed %s\n", m_name.c_str());
                     xQueueSendToBack(*m_queue, static_cast<void *>(&m_pin), pdMS_TO_TICKS(500));
                 }
                 ++m_debounce;

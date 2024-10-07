@@ -82,23 +82,25 @@ void i2c_task(void *param);
 void network_task(void *param) {
     auto *tpr = (task_params *) param;
 
+    cyw43_arch_init();
     bool connected = network_connect(WIFI_SSID, WIFI_PASSWORD);
     struct altcp_tls_config *tls_config = NULL;
     tls_config = altcp_tls_create_config_client(NULL, 0);
     mbedtls_ssl_conf_authmode((mbedtls_ssl_config *)tls_config, MBEDTLS_SSL_VERIFY_OPTIONAL);
     TLS_CLIENT_T *client = tls_client_init();
     std::stringstream request;
-
+    int test = 0;
     while(true) {
         /*
          * seems reconnecting is done automatically in the background and this is not needed
-         * though reconnecting might be a different case
+         * though connecting to another network might be a different case
+        */
         while(!connected) {
             connected = network_connect(WIFI_SSID, WIFI_PASSWORD);
-        }*/
+        }
         if (connected) {
             request << "POST /update.json"
-                    << "?field1=" << 70  // current co2 level
+                    << "?field1=" << ++test  // current co2 level
                     << "&field2=" << 12  // humidity
                     << "&field3=" << 55  // temp
                     << "&field4=" << 100 // fan speed

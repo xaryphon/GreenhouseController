@@ -8,12 +8,16 @@
                                  "Connection: close\r\n" \
                                  "\r\n"
 #define TLS_CLIENT_TIMEOUT_SECS  10
-#if 0
-#define WIFI_SSID "SmartIotMQTT"
-#define WIFI_PASSWORD "SmartIot"
+#if 1
+#define WIFI_SSID "STORM's A15"
+#define WIFI_PASSWORD "zaym8p9b8a44nqe"
+#define WIFI_SSID2 "SmartIotMQTT"
+#define WIFI_PASSWORD2 "SmartIot"
 #else
 #define WIFI_SSID "STORM's A15"
 #define WIFI_PASSWORD "zaym8p9b8a44nqe"
+#define WIFI_SSID2 "This is an ether net!"
+#define WIFI_PASSWORD2 "!!quaintjungle759!!"
 #endif
 
 #ifndef GREENHOUSE_CONTROLLER_API_H
