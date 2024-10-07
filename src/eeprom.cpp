@@ -38,7 +38,7 @@ Eeprom::Eeprom(PicoI2C &i2c)
 {
     memset(m_data.get(), 0, sizeof(EepromData));
     m_data->page.address = 0x0000;
-    xTaskCreate(task_entry, "EEPROM", 512, this, TASK_EEPROM_PRIORITY, nullptr);
+    xTaskCreate(task_entry, "EEPROM", 256, this, TASK_EEPROM_PRIORITY, nullptr);
 }
 
 Eeprom::~Eeprom() = default;
@@ -91,6 +91,7 @@ void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
     if (!TryReadEeprom(&m_i2c, ptr, 5)) {
         printf("Failed to read from EEPROM\n");
         eeprom_load_defaults(m_data.get());
+        m_loading = false;
         return;
     }
 
@@ -101,6 +102,7 @@ void Eeprom::LoadBlocking(SettingsDispatcher *settings) {
     if (crc != 0) {
         printf("Invalid CRC: got:0x%04x expected:0x%04x (stored:0x%04x)\n", +crc, 0, +m_data->page.checksum);
         eeprom_load_defaults(m_data.get());
+        m_loading = false;
         return;
     }
     m_data->page.reserved_nul = '\0';
@@ -145,7 +147,8 @@ void Eeprom::task()
             uint wrote = m_i2c.write(EEPROM_DEVICE_ADDRESS, ptr, EEPROM_ADDRESS_SIZE + EEPROM_PAGE_SIZE);
             if (wrote != sizeof(EepromData::page))
                 printf("Failed to write to EEPROM\n");
-            printf("Wrote to eeprom\n");
+            else
+                printf("Wrote to EEPROM\n");
         }
         vTaskDelay(EEPROM_FLUSH_TIME_MS / portTICK_PERIOD_MS);
     }
