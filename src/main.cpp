@@ -60,7 +60,7 @@ int main()
     static Button btn1("BTN1", BTN1_PIN, &input_queue);
     static Button btn2("BTN2", BTN2_PIN, &input_queue);
     static Button btnr("BTNR", ROT_SW_PIN, &input_queue);
-    static Network network("NETWORK");
+
 
     static auto uart = std::make_shared<PicoOsUart>(1, UART1_TX_PIN, UART1_RX_PIN, UART1_BAUD_RATE, UART1_STOP_BITS);
     static auto modbus = std::make_shared<ModbusClient>(uart);
@@ -70,6 +70,7 @@ int main()
     static PicoI2C i2c_0 { 0 };
     static Eeprom eeprom { i2c_0 };
     static Controller controller { &eeprom, CO2_DISSIPATOR_PIN, &co2_probe, &motor, &atmo };
+    static Network network("NETWORK", &co2_probe, &motor, &atmo, &controller);
     static SettingsDispatcher settings { &eeprom, &controller, &network };
     static UI ui("UI", &input_queue, &settings, &co2_probe, &motor, &atmo, &controller);
 
