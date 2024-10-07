@@ -6,6 +6,8 @@ Co2Probe::Co2Probe(std::shared_ptr<ModbusClient> modbus)
 
 uint Co2Probe::ReadPPM()
 {
-    return m_register.read();
+    uint r = m_register.read();
+    m_last_read = r;
+    return r;
 }
 
