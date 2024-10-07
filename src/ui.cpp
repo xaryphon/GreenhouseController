@@ -168,7 +168,7 @@ void UI::network(uint input){
                 m_target = 0;
             }
             else {
-                m_input[m_target].pop_back();
+                if (!m_input[m_target].empty()) m_input[m_target].pop_back();
             }
             break;
         case ROT_A_PIN:
@@ -228,7 +228,6 @@ void UI::update_display(ssd1306os &display) {
         sprintf(text[1], "%s", m_input[m_target].substr(m_input[m_target].size() < 16 ? 0 : m_input[m_target].size() - 16).c_str());
         sprintf(text[2], "%s", m_keyboard[0]);
     }
-
 
     if (m_current != "Network") {
         // display with centering for menu items
