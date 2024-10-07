@@ -6,7 +6,6 @@
 #define GREENHOUSE_CONTROLLER_BUTTON_H
 #include <string>
 #include "pico/stdlib.h"
-#include "blinker.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"

@@ -2,9 +2,6 @@ add_executable(${ProjectName}
         main.cpp
         critical_section.cpp
         Fmutex.cpp
-        Fmutex.h
-        blinker.cpp
-        blinker.h
         RotaryDecoder.cpp
         eeprom.cpp
         SettingsDispatcher.cpp

@@ -10,7 +10,6 @@
 #include <vector>
 #include <map>
 #include "pico/stdlib.h"
-#include "blinker.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
