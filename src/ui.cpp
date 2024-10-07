@@ -12,6 +12,7 @@ UI::UI(std::string name_, QueueHandle_t *queue_)
 , m_selected_x(0)
 , m_target(850) // 1500 + 200 / 2 = 850, midpoint of co2 target levels
 {
+    // first printable ascii character " " (space)
     int c = 32;
     for (int i = 0; i < 6; ++i) {
         for (int j = 0; j < 16; ++j) {
@@ -102,6 +103,8 @@ void UI::co2(uint input){
     switch (input) {
         case ROT_SW_PIN:
             // send m_target to controller
+
+        case BTN1_PIN:
             m_current = "settings";
             m_target = 850;
             m_selected_y = 0;
@@ -116,12 +119,7 @@ void UI::co2(uint input){
         case BTN0_PIN:
             if (m_target > 200) m_target -= 1;
             break;
-        case BTN1_PIN:
-            m_current = "settings";
-            m_target = 850;
-            m_selected_y = 0;
-            m_selected_x = 0;
-            break;
+
         case BTN2_PIN:
             if (m_target < 1500) m_target += 1;
             break;
@@ -135,20 +133,30 @@ void UI::network(uint input){
     switch (input) {
         case ROT_SW_PIN:
             if (m_selected_y == 5 && m_selected_x == 15) {
-                if (m_target == 0) m_target = 1;
+                if (m_target == 0) {
+                    m_target = 1;
+                    break;
+                }
                 else if (m_target == 1) {
                     printf("sending data\n");
-                    //send data and exit network
-                    m_current = "settings";
-                    m_text[0] = "";
-                    m_text[1] = "";
-                    m_selected_y = 0;
-                    m_selected_x = 0;
-                    m_target = 0;
+                    //send data
                 }
             }
             else {
                 m_text[m_target].push_back(m_keyboard[m_selected_y][m_selected_x]);
+                break;
+            }
+        case BTN1_PIN:
+            if (m_selected_y == 5 && m_selected_x == 15) {
+                m_current = "settings";
+                m_text[0] = "";
+                m_text[1] = "";
+                m_selected_y = 0;
+                m_selected_x = 0;
+                m_target = 0;
+            }
+            else {
+                m_text[m_target].pop_back();
             }
             break;
         case ROT_A_PIN:
@@ -162,19 +170,6 @@ void UI::network(uint input){
             // move down
             // 6 rows for keyboard
             if (m_selected_y < 5) m_selected_y += 1;
-            break;
-        case BTN1_PIN:
-            if (m_selected_y == 5 && m_selected_x == 15) {
-                m_current = "settings";
-                m_text[0] = "";
-                m_text[1] = "";
-                m_selected_y = 0;
-                m_selected_x = 0;
-                m_target = 0;
-            }
-            else {
-                m_text[m_target].pop_back();
-            }
             break;
         case BTN2_PIN:
             // move up
