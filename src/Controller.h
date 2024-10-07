@@ -21,7 +21,9 @@ public:
 
 private:
     static void entry(void*);
+    static void gas_entry(void*);
     void run();
+    void gas_run();
 
     void set_fan_speed(uint permille);
     void gas_for_ms(uint ms);
@@ -32,6 +34,8 @@ private:
     Co2Probe *m_co2_probe;
     Motor *m_motor;
     Atmosphere *m_atmo;
+    SemaphoreHandle_t m_gas_mutex;
+    uint16_t m_gas_for_ms;
     uint16_t m_target_ppm;
 
     friend class SettingsDispatcher;
