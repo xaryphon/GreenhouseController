@@ -199,9 +199,13 @@ void UI::update_display(ssd1306os &display) {
     if (m_current == "status") {
         sprintf(text[0], "%s", m_menu[m_current][m_selected_y].c_str());
         if (m_menu[m_current][m_selected_y] == "Sensor Status") {
+            uint8_t pressure[2];
+            i2c_read_blocking(i2c1, 0x40, pressure, 2, false);
+            auto read = (static_cast<int16_t>(pressure[0] << 8 | pressure[1])) / 240.f;
             sprintf(text[2], "  CO2 %3u   ppm", +m_co2_probe->GetLastPPM());
             sprintf(text[3], "   RH %5.1f %%RH", m_atmo->GetRelativeHumidity() / 10.f);
             sprintf(text[4], " Temp %5.1f C  ", m_atmo->GetTemperature() / 10.f);
+            sprintf(text[5], "Pressure %.1f pa", read);
         }
         else if (m_menu[m_current][m_selected_y] == "System Status") {
             uint16_t temp_raw = adc_read();
