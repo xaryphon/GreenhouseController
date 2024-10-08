@@ -72,7 +72,6 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
 
         pbuf_copy_partial(p, buf, p->tot_len, 0);
         buf[p->tot_len] = 0;
-        // {"executed_at":"2024-10-04T11:52:05Z","position":null,"id":44309941,"command_string":"target=500","created_at":"2024-10-04T11:51:55Z"}
 
         //printf("***\nnew data received from server:\n***\n%s\n", buf);
 
@@ -183,6 +182,7 @@ TLS_CLIENT_T* tls_client_init(void) {
 
     return state;
 }
+
 static void tlsdebug(void *ctx, int level, const char *file, int line, const char *message){
     fputs(message, stdout);
 }
@@ -215,7 +215,7 @@ int tls_request(TLS_CLIENT_T *client, const char *request, struct altcp_tls_conf
     client->http_request = request;
     client->timeout = TLS_CLIENT_TIMEOUT_SECS;
     tls_client_open(TLS_CLIENT_SERVER, client);
-
+    target = 0;
     while(!client->complete) {
         // the following #ifdef is only here so this same example can be used in multiple modes;
         // you do not need it in your code

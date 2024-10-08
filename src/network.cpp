@@ -10,7 +10,7 @@ bool network_connect(const char *ssid, const char *pwd);
 int tls_request(TLS_CLIENT_T_ *client, const char *request, struct altcp_tls_config *conf);
 }
 
-Network::Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller)
+Network::Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller, Eeprom *eeprom)
 : m_name(name_)
 , m_ssid("")
 , m_pwd("")
@@ -21,6 +21,7 @@ Network::Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmospher
 , m_motor(motor)
 , m_atmo(atmo)
 , m_controller(controller)
+, m_eeprom(eeprom)
 {
     xTaskCreate(Network::runner, m_name.c_str(), 6000, (void *) this, tskIDLE_PRIORITY + 1, nullptr);
 }
@@ -30,7 +31,6 @@ void Network::run() {
     m_tls_config = altcp_tls_create_config_client(NULL, 0);
     mbedtls_ssl_conf_authmode((mbedtls_ssl_config *)m_tls_config, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
-    int test = 0;
     while(true) {
         while(!m_connected && !m_ssid.empty() && !m_pwd.empty()) {
             m_connected = connect();
@@ -44,11 +44,12 @@ void Network::run() {
                       << "&field5=" << m_controller->GetTargetPPM()   // target co2 level
                       << "&api_key=" API_KEY "&talkback_key=" TB_KEY " HTTP/1.1\r\n"
                       << "Host:" TLS_CLIENT_SERVER "\r\nConnection:keep-alive\r\n\r\n";
-            printf("\n%s", m_request.str().c_str());
+            //printf("\n%s", m_request.str().c_str());
             printf("sending request...\n");
             int new_target = tls_request(m_client, m_request.str().c_str(), m_tls_config);
             if (new_target > 200 && new_target < 1500 && new_target != m_controller->GetTargetPPM()) {
                 m_controller->SetTargetPPM(new_target);
+                m_eeprom->QueueTargetPPM(new_target);
             }
             m_request.str("");
         }

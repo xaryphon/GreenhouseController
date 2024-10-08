@@ -34,10 +34,11 @@
 #include "Co2Probe.h"
 #include "Motor.h"
 #include "Controller.h"
+#include "eeprom.h"
 
 class Network{
 public:
-    explicit Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller);
+    explicit Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller, Eeprom *eeprom);
     void set_creds(const char *ssid, const char *pwd);
 private:
     void run();
@@ -54,5 +55,6 @@ private:
     Motor *m_motor;
     Atmosphere *m_atmo;
     Controller *m_controller;
+    Eeprom *m_eeprom;
 };
 #endif //GREENHOUSE_CONTROLLER_API_H
