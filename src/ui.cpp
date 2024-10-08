@@ -212,6 +212,7 @@ void UI::update_display(ssd1306os &display) {
             float temp = 27.f - (temp_raw / 4095.0f * 3.3f - 0.706f) / 0.001721f;
             sprintf(text[2], "Tcore %5.1f C  ", temp);
             sprintf(text[3], "Motor %5.1f %%  ", m_motor->GetPower() / 10.f);
+            sprintf(text[4], "CO2 Target %4d", m_controller->GetTargetPPM());
         }
     }
     else if (m_current == "Settings") {
@@ -225,7 +226,7 @@ void UI::update_display(ssd1306os &display) {
         sprintf(text[1], "Max:        1500");
         sprintf(text[2], "Min:         200");
         sprintf(text[3], "Current:    %4d", +m_controller->GetTargetPPM());
-        sprintf(text[4], "CO2 target: %4d", m_target);
+        sprintf(text[5], "New target: %4d", m_target);
     }
     else if (m_current == "Network") {
         sprintf(text[0], "%s %s", m_current.c_str(), m_target == 0 ? "SSID" : "PWD");
