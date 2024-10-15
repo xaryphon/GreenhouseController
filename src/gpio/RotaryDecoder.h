@@ -1,7 +1,7 @@
 #pragma once
 
-#include <FreeRTOS.h>
-#include <queue.h>
+#include "FreeRTOS.h"
+#include "queue.h"
 
 class RotaryDecoder {
 public:

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Atmosphere.h"
+#include "sensor/Atmosphere.h"
 #include "Motor.h"
-#include "Co2Probe.h"
+#include "sensor/Co2Probe.h"
 #include "eeprom.h"
 #include "pico/types.h"
 

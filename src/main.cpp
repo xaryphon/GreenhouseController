@@ -1,12 +1,12 @@
 #include <pico/cyw43_arch.h>
-#include "Atmosphere.h"
-#include "Co2Probe.h"
-#include "Controller.h"
+#include "sensor/Atmosphere.h"
+#include "sensor/Co2Probe.h"
+#include "control/Controller.h"
 #include "FreeRTOS.h"
 #include "PicoI2C.h"
-#include "RotaryDecoder.h"
-#include "SettingsDispatcher.h"
-#include "eeprom.h"
+#include "gpio/RotaryDecoder.h"
+#include "control/SettingsDispatcher.h"
+#include "control/eeprom.h"
 #include "task.h"
 #include "semphr.h"
 #include "hardware/gpio.h"
@@ -14,10 +14,10 @@
 #include "ModbusClient.h"
 
 #include "config.h"
-#include "button.h"
-#include "network.h"
-#include "ui.h"
-#include "RotaryDecoder.h"
+#include "gpio/button.h"
+#include "network/network.h"
+#include "ui/ui.h"
+#include "gpio/RotaryDecoder.h"
 
 #include "hardware/timer.h"
 extern "C" {

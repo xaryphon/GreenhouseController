@@ -2,13 +2,13 @@ add_executable(${ProjectName}
         main.cpp
         critical_section.cpp
         Fmutex.cpp
-        RotaryDecoder.cpp
-        eeprom.cpp
-        SettingsDispatcher.cpp
-        Co2Probe.cpp
-        Motor.cpp
-        Atmosphere.cpp
-        Controller.cpp
+        gpio/RotaryDecoder.cpp
+        control/eeprom.cpp
+        control/SettingsDispatcher.cpp
+        sensor/Co2Probe.cpp
+        control/Motor.cpp
+        sensor/Atmosphere.cpp
+        control/Controller.cpp
 
 #        ipstack/IPStack.cpp
 #        ipstack/IPStack.h
@@ -38,17 +38,17 @@ add_executable(${ProjectName}
 #        display/ssd1306.h
         display/ssd1306os.h
         display/ssd1306os.cpp
-        button.cpp
-        button.h
+        gpio/button.cpp
+        gpio/button.h
         config.h
-        network_client.c
-        network.h
-        ui.cpp
-        ui.h
-        RotaryDecoder.cpp
+        network/network_client.c
+        network/network.h
+        ui/ui.cpp
+        ui/ui.h
+        gpio/RotaryDecoder.cpp
         ../cJSON/cJSON.c
-        network.cpp
-        network_client.h
+        network/network.cpp
+        network/network_client.h
 )
 
 target_include_directories(${ProjectName} PRIVATE

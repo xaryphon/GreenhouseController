@@ -3,7 +3,7 @@
 //
 
 #include "ui.h"
-#include "SettingsDispatcher.h"
+#include "control/SettingsDispatcher.h"
 #include "hardware/adc.h"
 
 // custom enter key symbol for keyboard + palettes for colour inversion

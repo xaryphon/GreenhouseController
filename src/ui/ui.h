@@ -9,10 +9,10 @@
 #include <cstring>
 #include <vector>
 #include <map>
-#include "Atmosphere.h"
-#include "Co2Probe.h"
-#include "Controller.h"
-#include "Motor.h"
+#include "sensor/Atmosphere.h"
+#include "sensor/Co2Probe.h"
+#include "control/Controller.h"
+#include "control/Motor.h"
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "task.h"

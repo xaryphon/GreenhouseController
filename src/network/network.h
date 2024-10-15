@@ -30,11 +30,11 @@
 #include "queue.h"
 #include "cJSON.h"
 #include "network_client.h"
-#include "Atmosphere.h"
-#include "Co2Probe.h"
-#include "Motor.h"
-#include "Controller.h"
-#include "eeprom.h"
+#include "sensor/Atmosphere.h"
+#include "sensor/Co2Probe.h"
+#include "control/Motor.h"
+#include "control/Controller.h"
+#include "control/eeprom.h"
 
 class Network{
 public:
