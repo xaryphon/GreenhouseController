@@ -1,15 +1,13 @@
-//
-// Created by Noa Storm on 25/09/2024.
-//
+#include "Button.h"
 
-#include "button.h"
-#include "config.h"
-
-Button::Button(std::string name_, int pin_, QueueHandle_t *queue_) : m_name(name_), m_pin(pin_), m_queue(queue_) {
+Button::Button(const std::string& name, int pin, QueueHandle_t *queue)
+: m_pin(pin)
+, m_queue(queue)
+{
     gpio_init(m_pin);
     gpio_set_dir(m_pin, GPIO_IN);
     gpio_pull_up(m_pin);
-    xTaskCreate(Button::runner, m_name.c_str(), 256, (void *) this, TASK_BUTTON_PRIORITY, &m_handle);
+    xTaskCreate(Button::runner, name.c_str(), 256, (void *) this, TASK_BUTTON_PRIORITY, nullptr);
 }
 
 void Button::run() {

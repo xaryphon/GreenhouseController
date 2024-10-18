@@ -1,7 +1,12 @@
 #pragma once
 
-#include "PicoI2C.h"
 #include <memory>
+#include <cstring>
+#include <mutex>
+
+#include "config.h"
+
+#include "PicoI2C.h"
 
 class SettingsDispatcher;
 struct EepromData;

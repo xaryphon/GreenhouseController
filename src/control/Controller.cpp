@@ -1,10 +1,5 @@
 #include "Controller.h"
-#include "FreeRTOS.h"
 #include "SettingsDispatcher.h"
-#include "config.h"
-#include "hardware/gpio.h"
-#include "task.h"
-#include <cstdio>
 
 Controller::Controller(Eeprom *eeprom, uint co2_dissipator_pin, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo)
 : m_eeprom(eeprom)

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "ModbusClient.h"
 #include "ModbusRegister.h"
-#include <memory>
 
 class Motor {
 public:

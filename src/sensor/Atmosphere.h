@@ -1,8 +1,6 @@
 #pragma once
 
-#include "ModbusClient.h"
 #include "ModbusRegister.h"
-#include <memory>
 
 class Atmosphere {
 public:

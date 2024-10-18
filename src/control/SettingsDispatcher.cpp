@@ -6,6 +6,7 @@ SettingsDispatcher::SettingsDispatcher(Eeprom *eeprom, Controller *controller, N
 , m_network(network)
 {
     m_controller->m_settings = this;
+    m_network->m_settings = this;
 }
 
 void SettingsDispatcher::SetTargetPPM(uint16_t ppm) {

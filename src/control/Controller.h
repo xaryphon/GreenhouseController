@@ -1,9 +1,17 @@
 #pragma once
 
-#include "sensor/Atmosphere.h"
+#include <cstdio>
+
+#include "config.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
+#include "Co2Probe.h"
+#include "Atmosphere.h"
 #include "Motor.h"
-#include "sensor/Co2Probe.h"
 #include "eeprom.h"
+
+#include "hardware/gpio.h"
 #include "pico/types.h"
 
 class SettingsDispatcher;

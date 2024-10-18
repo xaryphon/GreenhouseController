@@ -1,9 +1,5 @@
 #include "eeprom.h"
 #include "SettingsDispatcher.h"
-#include "config.h"
-#include <cstring>
-#include <mutex>
-
 
 struct EepromData {
     struct {

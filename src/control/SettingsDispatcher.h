@@ -1,9 +1,10 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Controller.h"
 #include "eeprom.h"
-#include "network/network.h"
-#include <cstdint>
+#include "Network.h"
 
 class SettingsDispatcher {
 public:

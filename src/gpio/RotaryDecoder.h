@@ -1,7 +1,12 @@
 #pragma once
 
+#include <cstdio>
+
+#include "config.h"
 #include "FreeRTOS.h"
 #include "queue.h"
+
+#include <hardware/gpio.h>
 
 class RotaryDecoder {
 public:

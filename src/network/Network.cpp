@@ -1,8 +1,5 @@
-//
-// Created by Noa Storm on 07/10/2024.
-//
-
-#include "network.h"
+#include "Network.h"
+#include "SettingsDispatcher.h"
 
 extern "C" {
 TLS_CLIENT_T* tls_client_init(void);
@@ -10,29 +7,28 @@ bool network_connect(const char *ssid, const char *pwd);
 int tls_request(TLS_CLIENT_T_ *client, const char *request, struct altcp_tls_config *conf);
 }
 
-Network::Network(std::string name_, Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller, Eeprom *eeprom)
-: m_name(name_)
-, m_ssid("")
-, m_pwd("")
+Network::Network(Co2Probe *co2_probe, Motor *motor, Atmosphere *atmo, Controller *controller)
+: m_ssid(NETWORK_SSID_DEFAULT)
+, m_pwd(NETWORK_PASSWORD_DEFAULT)
 , m_connected(false)
 , m_client(tls_client_init())
-, m_tls_config(NULL)
+, m_tls_config(nullptr)
 , m_co2_probe(co2_probe)
 , m_motor(motor)
 , m_atmo(atmo)
 , m_controller(controller)
-, m_eeprom(eeprom)
 {
-    xTaskCreate(Network::runner, m_name.c_str(), 6000, (void *) this, tskIDLE_PRIORITY + 1, nullptr);
+    xTaskCreate(Network::runner, "NETWORK", 6000, (void *) this, TASK_NETWORK_PRIORITY, nullptr);
 }
 
 void Network::run() {
     cyw43_arch_init();
-    m_tls_config = altcp_tls_create_config_client(NULL, 0);
+    m_tls_config = altcp_tls_create_config_client(nullptr, 0);
     mbedtls_ssl_conf_authmode((mbedtls_ssl_config *)m_tls_config, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
     while(true) {
-        while(!m_connected && !m_ssid.empty() && !m_pwd.empty()) {
+        // connect to new network
+        if (!m_connected && !m_ssid.empty() && !m_pwd.empty()) {
             m_connected = connect();
         }
         if (m_connected) {
@@ -47,9 +43,8 @@ void Network::run() {
             //printf("\n%s", m_request.str().c_str());
             printf("sending request...\n");
             int new_target = tls_request(m_client, m_request.str().c_str(), m_tls_config);
-            if (new_target > 200 && new_target < 1500 && new_target != m_controller->GetTargetPPM()) {
-                m_controller->SetTargetPPM(new_target);
-                m_eeprom->QueueTargetPPM(new_target);
+            if (new_target != 0 && new_target != m_controller->GetTargetPPM()) {
+                m_settings->SetTargetPPM(new_target);
             }
             m_request.str("");
         }

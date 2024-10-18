@@ -2,62 +2,67 @@ add_executable(${ProjectName}
         main.cpp
         critical_section.cpp
         Fmutex.cpp
-        gpio/RotaryDecoder.cpp
-        control/eeprom.cpp
-        control/SettingsDispatcher.cpp
-        sensor/Co2Probe.cpp
-        control/Motor.cpp
-        sensor/Atmosphere.cpp
-        control/Controller.cpp
-
-#        ipstack/IPStack.cpp
-#        ipstack/IPStack.h
-        ipstack/lwipopts.h
-        ipstack/tls_common.c
+        #ipstack/IPStack.cpp
+        #ipstack/IPStack.h
+        #ipstack/lwipopts.h
+        #ipstack/tls_common.c
         #ipstack/picow_tls_client.c
-        ipstack/lwipopts_tls.h
-
+        #ipstack/lwipopts_tls.h
         i2c/PicoI2C.cpp
         i2c/PicoI2C.h
-
         uart/PicoOsUart.cpp
         uart/PicoOsUart.h
-
         modbus/nanomodbus.h
         modbus/nanomodbus.c
         modbus/ModbusRegister.cpp
         modbus/ModbusRegister.h
         modbus/ModbusClient.cpp
         modbus/ModbusClient.h
-
         display/framebuf.cpp
         display/framebuf.h
         display/mono_vlsb.cpp
         display/mono_vlsb.h
-#        display/ssd1306.cpp
-#        display/ssd1306.h
+        #display/ssd1306.cpp
+        #display/ssd1306.h
         display/ssd1306os.h
         display/ssd1306os.cpp
-        gpio/button.cpp
-        gpio/button.h
+
         config.h
-        network/network_client.c
-        network/network.h
-        ui/ui.cpp
-        ui/ui.h
-        gpio/RotaryDecoder.cpp
         ../cJSON/cJSON.c
-        network/network.cpp
-        network/network_client.h
+
+        gpio/Button.cpp
+        gpio/RotaryDecoder.cpp
+
+        sensor/Co2Probe.cpp
+        sensor/Atmosphere.cpp
+
+        control/Controller.cpp
+        control/SettingsDispatcher.cpp
+        control/eeprom.cpp
+        control/Motor.cpp
+
+        network/Network.cpp
+        network/NetworkClient.c
+
+        ui/UI.cpp
+        ui/StatusUI.cpp
+        ui/CO2UI.cpp
+        ui/NetworkUI.cpp
+        ui/SettingsUI.cpp
 )
 
 target_include_directories(${ProjectName} PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}
-        modbus
-        uart
-        i2c
+        ${CMAKE_CURRENT_LIST_DIR}
+        control
         display
+        gpio
+        i2c
         ipstack
+        modbus
+        network
+        sensor
+        uart
+        ui
         ../cJSON
 )
 
